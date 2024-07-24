@@ -1,0 +1,7 @@
+let
+    Source = DateTimeZone.SwitchZone(DateTimeZone.UtcNow(), +7),
+    #"Converted to Table" = #table(1, {{Source}}),
+    #"Renamed Columns to Timestamp" = Table.RenameColumns(#"Converted to Table",{{"Column1", "Timestamp"}}),
+    #"Type to Timezone" = Table.TransformColumnTypes(#"Renamed Columns to Timestamp",{{"Timestamp", type datetimezone}})
+in
+    #"Type to Timezone"
