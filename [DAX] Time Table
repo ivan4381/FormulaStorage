@@ -1,0 +1,11 @@
+Time Table = 
+VAR HourTable = SELECTCOLUMNS(GENERATESERIES((0), (23)), "Hour", [Value])
+VAR MinuteTable = SELECTCOLUMNS(GENERATESERIES((0), (59)), "Minute", [Value])
+VAR SecondsTable = SELECTCOLUMNS(GENERATESERIES((0), (59)), "Second", [Value])
+RETURN
+ADDCOLUMNS(
+CROSSJOIN(HourTable, MinuteTable, SecondsTable),
+"Hour2", FORMAT([Hour], "00")&":00",
+"Minute2", FORMAT([Minute],"00:"&"00"),
+"Time", TIME([Hour], [Minute],[Second])
+)
