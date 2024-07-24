@@ -1,0 +1,24 @@
+//Change 'Transaction'[TANGGAL] to FactTable Date Column Name
+Calendar = 
+VAR _LastTrxDate = MAX('Transaction'[TANGGAL])
+VAR _LastTrxDateLastMonth = EDATE(_LastTrxDate, -1)
+VAR _LastTrxdateLastYear = EDATE(_LastTrxDate, -12)
+RETURN
+ADDCOLUMNS (
+    CALENDARAUTO (),
+    "Month", MONTH ( [Date] ),
+    "MonthNameShort", FORMAT ( [Date], "mmm", "id" ),
+    "MonthNameLong", FORMAT ( [Date], "MMMM", "id" ),
+    "MonthYear", FORMAT ( [Date], "mmm yy", "id" ),
+    "MonthKey", DATE(YEAR([Date]),MONTH([Date]),1),
+    "SortMonthYear",
+        YEAR ( [Date] ) * 100
+            + MONTH ( [Date] ),
+    "TriWulan", "TW " & FORMAT ( [Date], "Q" ),
+    "Day Name", FORMAT ( [Date], "DDDD", "id" ),
+    "Day Number", WEEKDAY([Date],2),
+    "Year", YEAR ( [Date] ),
+    "Week", WEEKNUM ( [Date], 2 ),
+    "IsInPastMth", [Date] <= _LastTrxDateLastMonth,
+    "IsInPastYear", [Date] <= _LastTrxdateLastYear
+)
