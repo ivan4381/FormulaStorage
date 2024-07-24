@@ -1,0 +1,5 @@
+//Change 'All Transaction' to your FactTable name
+Cross Filter = INT(NOT
+    (
+        ISEMPTY('All Transaction'))
+)
