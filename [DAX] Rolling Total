@@ -1,0 +1,13 @@
+// contoh untuk rolling total 3 bulan ke belakang, termasuk dengan bulan berjalan
+// [Total Volume] bisa diganti Base Measure lain (Average misalnya)
+VAR _RollingSales =
+ CALCULATE(
+    [Total Volume],
+    DATESINPERIOD(
+        'Calendar'[Date],
+        MAX('Calendar'[Date]),
+        -3,
+        MONTH
+    )
+)
+RETURN _RollingSales
