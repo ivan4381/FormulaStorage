@@ -1,0 +1,25 @@
+First 1000 Points Date = 
+VAR _current = 'Q3-Real JBU MyPertamina 2024'[TANGGAL]
+VAR _currentCustomer = 'Q3-Real JBU MyPertamina 2024'[Handphone]
+VAR _result = 
+    SUMX(
+        FILTER('Q3-Real JBU MyPertamina 2024',
+        'Q3-Real JBU MyPertamina 2024'[TANGGAL] <= _current && 'Q3-Real JBU MyPertamina 2024'[Handphone] = _currentCustomer
+        ),
+        'Q3-Real JBU MyPertamina 2024'[Total Poin]
+    )
+RETURN
+    IF(_result >=1000, 'Q3-Real JBU MyPertamina 2024'[TANGGAL], BLANK())
+
+//Cumulative Point
+Cum. Points = 
+VAR _current = 'Q3-Real JBU MyPertamina 2024'[TANGGAL]
+VAR _currentCustomer = 'Q3-Real JBU MyPertamina 2024'[Handphone]
+VAR _result = 
+    SUMX(
+        FILTER('Q3-Real JBU MyPertamina 2024',
+        'Q3-Real JBU MyPertamina 2024'[TANGGAL] <= _current && 'Q3-Real JBU MyPertamina 2024'[Handphone] = _currentCustomer
+        ),
+        'Q3-Real JBU MyPertamina 2024'[Total Poin]
+    )
+RETURN _result
