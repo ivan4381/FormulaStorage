@@ -1,0 +1,21 @@
+SELECT 
+    TRX_date, 
+    TRX_time,  
+    Handphone, 
+    CONCAT(SUBSTR(Name, 1, 2), LPAD(SUBSTR(Name, -1), LENGTH(Name) - 1, '*')) AS Name_Masking, 
+    SPBU, 
+    Product, 
+    CAST(REPLACE(Volume, ",", ".") AS FLOAT64) AS volume, 
+    Earning_point, 
+    Source_of_fund AS SOF, 
+    Status,  
+    Amount AS AMOUNT, 
+    Voucher_value, 
+    Total_special_price AS Special_Price,
+    TRX_id,
+    Failed_status 
+FROM 
+    mypertaminadashboard.figurcoba.MyPertamina
+WHERE 
+    Source_of_fund NOT IN ("cash") and
+    TRX_date between "2024-08-01" and "2024-08-31"
