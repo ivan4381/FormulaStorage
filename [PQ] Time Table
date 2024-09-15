@@ -1,0 +1,13 @@
+let
+//Specify your start time here
+    StartTime = #time(0,0,0),
+//specify your end time here
+    ToTime = #time(23, 59, 0),
+    TimeList = List.Times(StartTime, Duration.Minutes(ToTime-StartTime), #duration(0,0,1,0) ),
+    #"Converted to Table" = Table.FromList(TimeList, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Renamed Columns" = Table.RenameColumns(#"Converted to Table",{{"Column1", "Time"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Time", type time}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Hour", each Time.Hour([Time]), Int64.Type),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "Minute", each Time.Minute([Time]), Int64.Type)
+in
+    #"Added Custom1"
