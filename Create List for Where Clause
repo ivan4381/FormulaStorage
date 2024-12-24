@@ -1,0 +1,2 @@
+--Formula untuk mengubah satu kolom berisi data menjadi satu kolom dan baris yang bisa dicopy paste untuk where clause BigQuery
+= Text.Combine(#"Removed Columns"[Merged],",")
