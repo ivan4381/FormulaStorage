@@ -1,2 +1,4 @@
---Formula untuk mengubah satu kolom berisi data menjadi satu kolom dan baris yang bisa dicopy paste untuk where clause BigQuery
+-- Formula untuk mengubah satu kolom berisi data menjadi satu kolom dan baris yang bisa dicopy paste untuk where clause BigQuery
+-- #"Removed Columns" mengacu ke previous step (bisa disesuaikan sesuai aktual) dan [Merged] mengacu ke Header Kolom yang berisi data-data yang akan dijadikan satu
+-- (juga bisa disesuaikan manual)
 = Text.Combine(#"Removed Columns"[Merged],",")
