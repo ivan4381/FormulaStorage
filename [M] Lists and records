@@ -1,0 +1,2 @@
+Extract Judul Kolom/Header sebagai List : =Table.ColumnNames(NamaTabel)
+Convert Spesifik Kolom dari Tabel ke List : =NamaTabel[NamaKolomYangMauDiambil]
