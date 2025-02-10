@@ -1,2 +1,5 @@
 Extract Judul Kolom/Header sebagai List : =Table.ColumnNames(NamaTabel)
-Convert Spesifik Kolom dari Tabel ke List : =NamaTabel[NamaKolomYangMauDiambil]
+Convert Kolom tertentu dari Tabel ke List : =NamaTabel[NamaKolomYangMauDiambil]
+Convert seluruh Tabel ke List : =Table.ToColumns(NamaTabel)
+Gabungkan List body tabel dengan header menjadi tabel : =Table.FromColumns(ListBodyTabel,ListHeaderTabel)
+Split List mnejadi beberapa bucket/grup : =List.Split(NamaList,JumlahBucket)
