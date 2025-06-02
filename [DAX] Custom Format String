@@ -4,16 +4,18 @@ IF(CurrentValue > 0,
     SWITCH (
         TRUE (),
         CurrentValue <= 1E3, "#,0.00",
-        CurrentValue < 1E6, "#,0,. Ribu;-#,0,. Ribu",
+        CurrentValue < 1E6, "#,0",
         CurrentValue < 1E9, "#,##0,,.00 Juta",
-        CurrentValue <= 1E12, "#,0,,,.00M",
-        CurrentValue <= 1E15, "#,0,,,,.00T"),
+        CurrentValue < 1E12, "#,0,,,.00M",
+        CurrentValue < 1E15, "#,0,,,,.00T"),
     SWITCH (
         TRUE (),
         CurrentValue >= -1E3, "#,0.00",
-        CurrentValue > -1E6, "#,0,. Ribu",
+        CurrentValue > -1E6, "#,0",
         CurrentValue > -1E9, "#,##0,,.00 Juta",
-        CurrentValue >= -1E12, "#,0,,,.00M",
-        CurrentValue >= -1E15, "#,0,,,,.00T")
+        CurrentValue > -1E12, "#,0,,,.00M",
+        CurrentValue > -1E15, "#,0,,,,.00T")
 )
-// For Percent use ▲ 0,00%;▼ 0,00%
+// For Percent with 2 decimals use "▲ 0.00%;▼ 0.00%"
+List Unichar Symbol
+⏶⏷✅⛔🟠🟡🟢🡅🡇
