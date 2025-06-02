@@ -1,6 +1,7 @@
 let
     Today = Date.From( DateTime.LocalNow() ),
-    StartDate = #date(2023, 1, 1),
+    //Create Start Date -1 Year from Today
+    StartDate = #date(Date.Year(Today)-1, 1, 1),
     EndDate = Date.EndOfYear( Today ),
     #"List of Dates" = List.Dates( StartDate, Duration.Days( EndDate - StartDate ) +1, #duration( 1, 0, 0, 0 ) ),
     #"Converted to Table" = Table.FromList( #"List of Dates", Splitter.SplitByNothing(), type table[Date = Date.Type] ),
