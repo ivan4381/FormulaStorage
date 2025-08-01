@@ -1,0 +1,16 @@
+SELECT 
+    s.name AS SchemaName,
+    t.name AS TableName,
+    c.name AS ColumnName,
+    o.create_date AS TableCreatedDate,
+    o.modify_date AS TableLastModifiedDate
+FROM 
+    sys.tables t
+JOIN 
+    sys.columns c ON t.object_id = c.object_id
+JOIN 
+    sys.objects o ON t.object_id = o.object_id
+JOIN 
+    sys.schemas s ON t.schema_id = s.schema_id
+ORDER BY 
+    s.name, t.name, c.column_id;
