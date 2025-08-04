@@ -10,7 +10,7 @@ ORDER BY ColNum DESC
 
 
 
-
+//Menampilkan daftar tabel, jumlah kolom, data size
 CREATE TABLE #TableSize (
     TableName NVARCHAR(258), -- Schema + table name
     [Rows] BIGINT,
@@ -53,4 +53,3 @@ FROM #TableSize
 ORDER BY Rows DESC;
 
 DROP TABLE #TableSize;
-
