@@ -1,0 +1,21 @@
+SELECT 
+    SCHEMA_NAME(t.schema_id) AS SchemaName,
+    t.name AS TableName,
+    t.create_date AS CreatedDate,
+    SUM(p.rows) AS RowCounts,
+    COUNT(c.column_id) AS ColumnCounts,
+    SUM(a.total_pages * 8) AS TotalSpaceBytes
+FROM 
+    sys.tables t
+INNER JOIN     
+    sys.indexes i ON t.object_id = i.object_id
+INNER JOIN 
+    sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+INNER JOIN 
+    sys.allocation_units a ON p.partition_id = a.container_id
+LEFT JOIN 
+    sys.columns c ON t.object_id = c.object_id
+GROUP BY 
+    SCHEMA_NAME(t.schema_id), t.name, t.create_date
+ORDER BY 
+    TotalSpaceBytes DESC;
