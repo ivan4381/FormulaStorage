@@ -1,16 +1,56 @@
+//menampilkan daftar tabel, skema, dan jumlah kolom
 SELECT 
-    s.name AS SchemaName,
-    t.name AS TableName,
-    c.name AS ColumnName,
-    o.create_date AS TableCreatedDate,
-    o.modify_date AS TableLastModifiedDate
+TABLE_SCHEMA,
+TABLE_NAME,
+COUNT(COLUMN_NAME) AS ColNum
 FROM 
-    sys.tables t
-JOIN 
-    sys.columns c ON t.object_id = c.object_id
-JOIN 
-    sys.objects o ON t.object_id = o.object_id
-JOIN 
-    sys.schemas s ON t.schema_id = s.schema_id
-ORDER BY 
-    s.name, t.name, c.column_id;
+    INFORMATION_SCHEMA.COLUMNS
+GROUP BY TABLE_SCHEMA, TABLE_NAME
+ORDER BY ColNum DESC
+
+
+
+
+CREATE TABLE #TableSize (
+    TableName NVARCHAR(258), -- Schema + table name
+    [Rows] BIGINT,
+    Reserved NVARCHAR(50),
+    Data NVARCHAR(50),
+    Index_Size NVARCHAR(50),
+    Unused NVARCHAR(50)
+);
+
+DECLARE @table NVARCHAR(258);
+DECLARE @sql NVARCHAR(MAX);
+
+DECLARE cur CURSOR FOR
+SELECT QUOTENAME(SCHEMA_NAME(schema_id)) + '.' + QUOTENAME(name) 
+FROM sys.tables;
+
+OPEN cur;
+
+FETCH NEXT FROM cur INTO @table;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    SET @sql = N'EXEC sp_spaceused ''' + @table + '''';
+    INSERT INTO #TableSize
+    EXEC sp_executesql @sql;
+
+    FETCH NEXT FROM cur INTO @table;
+END
+
+CLOSE cur;
+DEALLOCATE cur;
+
+SELECT 
+    TableName, 
+    [Rows], 
+    Reserved, 
+    Data, 
+    Index_Size
+FROM #TableSize
+ORDER BY Rows DESC;
+
+DROP TABLE #TableSize;
+
