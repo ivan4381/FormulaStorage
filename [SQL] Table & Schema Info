@@ -11,45 +11,93 @@ ORDER BY ColNum DESC
 
 
 //Menampilkan daftar tabel, jumlah kolom, data size
+IF OBJECT_ID('tempdb..#TableSize') IS NOT NULL
+    DROP TABLE #TableSize;
+
 CREATE TABLE #TableSize (
-    TableName NVARCHAR(258), -- Schema + table name
+    SchemaName NVARCHAR(128),
+    TableName NVARCHAR(128), 
     [Rows] BIGINT,
     Reserved NVARCHAR(50),
     Data NVARCHAR(50),
     Index_Size NVARCHAR(50),
-    Unused NVARCHAR(50)
+    Unused NVARCHAR(50),
+    ColumnCount INT
 );
 
-DECLARE @table NVARCHAR(258);
+DECLARE @schema NVARCHAR(128);
+DECLARE @table NVARCHAR(128);
+DECLARE @fullTable NVARCHAR(258);
 DECLARE @sql NVARCHAR(MAX);
 
+-- Table variable untuk menampung hasil sp_spaceused sementara
+DECLARE @tblSpaceUsed TABLE (
+    name NVARCHAR(128),
+    rows BIGINT,
+    reserved NVARCHAR(50),
+    data NVARCHAR(50),
+    index_size NVARCHAR(50),
+    unused NVARCHAR(50)
+);
+
 DECLARE cur CURSOR FOR
-SELECT QUOTENAME(SCHEMA_NAME(schema_id)) + '.' + QUOTENAME(name) 
+SELECT SCHEMA_NAME(schema_id), name
 FROM sys.tables;
 
 OPEN cur;
-
-FETCH NEXT FROM cur INTO @table;
+FETCH NEXT FROM cur INTO @schema, @table;
 
 WHILE @@FETCH_STATUS = 0
 BEGIN
-    SET @sql = N'EXEC sp_spaceused ''' + @table + '''';
-    INSERT INTO #TableSize
+    SET @fullTable = QUOTENAME(@schema) + '.' + QUOTENAME(@table);
+    SET @sql = N'EXEC sp_spaceused ''' + @fullTable + '''';
+
+    DELETE FROM @tblSpaceUsed; -- kosongkan dulu
+
+    INSERT INTO @tblSpaceUsed
     EXEC sp_executesql @sql;
 
-    FETCH NEXT FROM cur INTO @table;
+    -- Hitung jumlah kolom untuk schema dan tabel ini
+    DECLARE @colCount INT;
+    SELECT @colCount = COUNT(*) 
+    FROM sys.columns c
+    JOIN sys.tables t ON c.object_id = t.object_id
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+    WHERE s.name = @schema AND t.name = @table;
+
+    -- Insert ke table utama dengan menambahkan schema dan nama table secara eksplisit, serta jumlah kolom
+    INSERT INTO #TableSize
+    SELECT @schema, name, rows, reserved, data, index_size, unused, @colCount
+    FROM @tblSpaceUsed;
+
+    FETCH NEXT FROM cur INTO @schema, @table;
 END
 
 CLOSE cur;
 DEALLOCATE cur;
 
 SELECT 
-    TableName, 
+    SchemaName,
+    TableName,
+    ColumnCount,
     [Rows], 
     Reserved, 
     Data, 
     Index_Size
 FROM #TableSize
-ORDER BY Rows DESC;
+ORDER BY [Rows] DESC;
+
+DROP TABLE #TableSize;
+
+
+SELECT 
+    SchemaName,
+    TableName,
+    [Rows], 
+    Reserved, 
+    Data, 
+    Index_Size
+FROM #TableSize
+ORDER BY [Rows] DESC;
 
 DROP TABLE #TableSize;
