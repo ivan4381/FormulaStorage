@@ -8,7 +8,19 @@ FROM
 GROUP BY TABLE_SCHEMA, TABLE_NAME
 ORDER BY ColNum DESC
 
-
+//Menampilkan extended properties (description, source dll)
+SELECT
+    SCHEMA_NAME(t.schema_id) AS SchemaName,
+    t.name AS TableName,
+    ep.name AS PropertyName,
+    ep.value AS PropertyValue
+FROM
+    sys.tables t
+LEFT JOIN
+    sys.extended_properties ep ON ep.major_id = t.object_id
+        AND ep.minor_id = 0
+ORDER BY
+    SchemaName, TableName, PropertyName;
 
 //Menampilkan daftar tabel, jumlah kolom, data size
 IF OBJECT_ID('tempdb..#TableSize') IS NOT NULL
@@ -80,19 +92,6 @@ SELECT
     SchemaName,
     TableName,
     ColumnCount,
-    [Rows], 
-    Reserved, 
-    Data, 
-    Index_Size
-FROM #TableSize
-ORDER BY [Rows] DESC;
-
-DROP TABLE #TableSize;
-
-
-SELECT 
-    SchemaName,
-    TableName,
     [Rows], 
     Reserved, 
     Data, 
