@@ -1,0 +1,142 @@
+-- ===============================
+-- SCRIPT BACKUP EXTENDED PROPERTIES
+-- ===============================
+
+-- 1. BACKUP EXTENDED PROPERTIES KE TABEL BACKUP
+-- Buat tabel backup jika belum ada
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ExtendedPropertiesBackup')
+BEGIN
+    CREATE TABLE ExtendedPropertiesBackup (
+        BackupDate DATETIME2 DEFAULT GETDATE(),
+        PropertyName NVARCHAR(128),
+        PropertyValue SQL_VARIANT,
+        Level0Type VARCHAR(128),
+        Level0Name NVARCHAR(128),
+        Level1Type VARCHAR(128),
+        Level1Name NVARCHAR(128),
+        Level2Type VARCHAR(128),
+        Level2Name NVARCHAR(128),
+        ObjectType NVARCHAR(50),
+        FullObjectName NVARCHAR(500)
+    )
+END
+
+-- Insert semua extended properties ke tabel backup
+INSERT INTO ExtendedPropertiesBackup (
+    PropertyName, PropertyValue, Level0Type, Level0Name, 
+    Level1Type, Level1Name, Level2Type, Level2Name, 
+    ObjectType, FullObjectName
+)
+SELECT 
+    ep.name AS PropertyName,
+    ep.value AS PropertyValue,
+    ep.class_desc AS Level0Type,
+    SCHEMA_NAME(o.schema_id) AS Level0Name,
+    CASE 
+        WHEN ep.class = 1 THEN 'TABLE'
+        WHEN ep.class = 0 THEN 'DATABASE'
+        ELSE 'OTHER'
+    END AS Level1Type,
+    ISNULL(o.name, '') AS Level1Name,
+    CASE 
+        WHEN c.name IS NOT NULL THEN 'COLUMN'
+        ELSE NULL
+    END AS Level2Type,
+    ISNULL(c.name, '') AS Level2Name,
+    CASE 
+        WHEN ep.class = 0 THEN 'DATABASE'
+        WHEN ep.class = 1 AND c.name IS NULL THEN 'TABLE'
+        WHEN ep.class = 1 AND c.name IS NOT NULL THEN 'COLUMN'
+        ELSE 'OTHER'
+    END AS ObjectType,
+    CASE 
+        WHEN ep.class = 0 THEN 'DATABASE'
+        WHEN ep.class = 1 AND c.name IS NULL THEN SCHEMA_NAME(o.schema_id) + '.' + o.name
+        WHEN ep.class = 1 AND c.name IS NOT NULL THEN SCHEMA_NAME(o.schema_id) + '.' + o.name + '.' + c.name
+        ELSE 'OTHER'
+    END AS FullObjectName
+FROM sys.extended_properties ep
+LEFT JOIN sys.objects o ON ep.major_id = o.object_id
+LEFT JOIN sys.columns c ON ep.major_id = c.object_id AND ep.minor_id = c.column_id
+WHERE ep.class IN (0, 1); -- 0=Database, 1=Object/Column
+
+-- 2. GENERATE SCRIPT UNTUK RESTORE EXTENDED PROPERTIES
+SELECT 
+    'EXEC sp_addextendedproperty 
+    @name = N''' + PropertyName + ''', 
+    @value = N''' + CAST(PropertyValue AS NVARCHAR(MAX)) + ''', 
+    @level0type = N''' + 
+    CASE 
+        WHEN ObjectType = 'DATABASE' THEN 'DATABASE'
+        ELSE 'SCHEMA'
+    END + ''', 
+    @level0name = N''' + 
+    CASE 
+        WHEN ObjectType = 'DATABASE' THEN ''
+        ELSE Level0Name
+    END + '''' +
+    CASE 
+        WHEN ObjectType IN ('TABLE', 'COLUMN') THEN ', 
+    @level1type = N''TABLE'', 
+    @level1name = N''' + Level1Name + ''''
+        ELSE ''
+    END +
+    CASE 
+        WHEN ObjectType = 'COLUMN' THEN ', 
+    @level2type = N''COLUMN'', 
+    @level2name = N''' + Level2Name + ''''
+        ELSE ''
+    END + ';' AS RestoreScript
+FROM ExtendedPropertiesBackup 
+WHERE BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup)
+ORDER BY ObjectType, FullObjectName;
+
+-- 3. SCRIPT UNTUK EXPORT KE FILE (Manual Copy-Paste)
+PRINT '-- ===============================';
+PRINT '-- RESTORE EXTENDED PROPERTIES SCRIPT';
+PRINT '-- Generated on: ' + CONVERT(VARCHAR(20), GETDATE(), 120);
+PRINT '-- ===============================';
+PRINT '';
+
+-- Generate restore script untuk database level
+SELECT 
+    'EXEC sp_addextendedproperty @name = N''' + PropertyName + ''', @value = N''' + 
+    REPLACE(CAST(PropertyValue AS NVARCHAR(MAX)), '''', '''''') + ''';' AS Script
+FROM ExtendedPropertiesBackup 
+WHERE ObjectType = 'DATABASE' 
+    AND BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup);
+
+-- Generate restore script untuk table level
+SELECT 
+    'EXEC sp_addextendedproperty @name = N''' + PropertyName + ''', @value = N''' + 
+    REPLACE(CAST(PropertyValue AS NVARCHAR(MAX)), '''', '''''') + 
+    ''', @level0type = N''SCHEMA'', @level0name = N''' + Level0Name + 
+    ''', @level1type = N''TABLE'', @level1name = N''' + Level1Name + ''';' AS Script
+FROM ExtendedPropertiesBackup 
+WHERE ObjectType = 'TABLE' 
+    AND BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup);
+
+-- Generate restore script untuk column level
+SELECT 
+    'EXEC sp_addextendedproperty @name = N''' + PropertyName + ''', @value = N''' + 
+    REPLACE(CAST(PropertyValue AS NVARCHAR(MAX)), '''', '''''') + 
+    ''', @level0type = N''SCHEMA'', @level0name = N''' + Level0Name + 
+    ''', @level1type = N''TABLE'', @level1name = N''' + Level1Name + 
+    ''', @level2type = N''COLUMN'', @level2name = N''' + Level2Name + ''';' AS Script
+FROM ExtendedPropertiesBackup 
+WHERE ObjectType = 'COLUMN' 
+    AND BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup);
+
+-- 4. VERIFICATION SCRIPT
+-- Cek jumlah extended properties sebelum dan sesudah restore
+SELECT 
+    'Total Extended Properties in Backup: ' + CAST(COUNT(*) AS VARCHAR(10)) AS Info
+FROM ExtendedPropertiesBackup 
+WHERE BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup)
+
+UNION ALL
+
+SELECT 
+    'Total Extended Properties Currently: ' + CAST(COUNT(*) AS VARCHAR(10))
+FROM sys.extended_properties
+WHERE class IN (0, 1);
