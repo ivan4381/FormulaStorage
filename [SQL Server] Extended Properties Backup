@@ -2,23 +2,26 @@
 -- SCRIPT BACKUP EXTENDED PROPERTIES
 -- ===============================
 -- 1. BACKUP EXTENDED PROPERTIES KE TABEL BACKUP
--- Buat tabel backup jika belum ada
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'TableInformation' AND schema_id = SCHEMA_ID('dictionary'))
+-- Cek jika tabel backup sudah ada, drop dan buat baru
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'TableInformation' AND schema_id = SCHEMA_ID('dictionary'))
 BEGIN
-    CREATE TABLE dictionary.TableInformation (
-        BackupDate VARCHAR(19) DEFAULT FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm:ss'),
-        PropertyName NVARCHAR(128),
-        PropertyValue SQL_VARIANT,
-        Level0Type VARCHAR(128),
-        Level0Name NVARCHAR(128),
-        Level1Type VARCHAR(128),
-        Level1Name NVARCHAR(128),
-        Level2Type VARCHAR(128),
-        Level2Name NVARCHAR(128),
-        ObjectType NVARCHAR(50),
-        FullObjectName NVARCHAR(500)
-    )
+    DROP TABLE dictionary.TableInformation
 END
+
+-- Buat tabel backup baru
+CREATE TABLE dictionary.TableInformation (
+    BackupDate VARCHAR(19) DEFAULT FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm:ss'),
+    PropertyName NVARCHAR(128),
+    PropertyValue SQL_VARIANT,
+    Level0Type VARCHAR(128),
+    Level0Name NVARCHAR(128),
+    Level1Type VARCHAR(128),
+    Level1Name NVARCHAR(128),
+    Level2Type VARCHAR(128),
+    Level2Name NVARCHAR(128),
+    ObjectType NVARCHAR(50),
+    FullObjectName NVARCHAR(500)
+)
 
 -- Insert semua extended properties ke tabel backup
 INSERT INTO dictionary.TableInformation (
