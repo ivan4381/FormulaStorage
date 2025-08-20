@@ -1,13 +1,12 @@
 -- ===============================
 -- SCRIPT BACKUP EXTENDED PROPERTIES
 -- ===============================
-
 -- 1. BACKUP EXTENDED PROPERTIES KE TABEL BACKUP
 -- Buat tabel backup jika belum ada
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ExtendedPropertiesBackup')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'TableInformation' AND schema_id = SCHEMA_ID('dictionary'))
 BEGIN
-    CREATE TABLE ExtendedPropertiesBackup (
-        BackupDate DATETIME2 DEFAULT GETDATE(),
+    CREATE TABLE dictionary.TableInformation (
+        BackupDate VARCHAR(19) DEFAULT FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm:ss'),
         PropertyName NVARCHAR(128),
         PropertyValue SQL_VARIANT,
         Level0Type VARCHAR(128),
@@ -22,7 +21,7 @@ BEGIN
 END
 
 -- Insert semua extended properties ke tabel backup
-INSERT INTO ExtendedPropertiesBackup (
+INSERT INTO dictionary.TableInformation (
     PropertyName, PropertyValue, Level0Type, Level0Name, 
     Level1Type, Level1Name, Level2Type, Level2Name, 
     ObjectType, FullObjectName
@@ -87,8 +86,8 @@ SELECT
     @level2name = N''' + Level2Name + ''''
         ELSE ''
     END + ';' AS RestoreScript
-FROM ExtendedPropertiesBackup 
-WHERE BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup)
+FROM dictionary.TableInformation 
+WHERE BackupDate = (SELECT MAX(BackupDate) FROM dictionary.TableInformation)
 ORDER BY ObjectType, FullObjectName;
 
 -- 3. SCRIPT UNTUK EXPORT KE FILE (Manual Copy-Paste)
@@ -102,9 +101,9 @@ PRINT '';
 SELECT 
     'EXEC sp_addextendedproperty @name = N''' + PropertyName + ''', @value = N''' + 
     REPLACE(CAST(PropertyValue AS NVARCHAR(MAX)), '''', '''''') + ''';' AS Script
-FROM ExtendedPropertiesBackup 
+FROM dictionary.TableInformation 
 WHERE ObjectType = 'DATABASE' 
-    AND BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup);
+    AND BackupDate = (SELECT MAX(BackupDate) FROM dictionary.TableInformation);
 
 -- Generate restore script untuk table level
 SELECT 
@@ -112,9 +111,9 @@ SELECT
     REPLACE(CAST(PropertyValue AS NVARCHAR(MAX)), '''', '''''') + 
     ''', @level0type = N''SCHEMA'', @level0name = N''' + Level0Name + 
     ''', @level1type = N''TABLE'', @level1name = N''' + Level1Name + ''';' AS Script
-FROM ExtendedPropertiesBackup 
+FROM dictionary.TableInformation 
 WHERE ObjectType = 'TABLE' 
-    AND BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup);
+    AND BackupDate = (SELECT MAX(BackupDate) FROM dictionary.TableInformation);
 
 -- Generate restore script untuk column level
 SELECT 
@@ -123,16 +122,16 @@ SELECT
     ''', @level0type = N''SCHEMA'', @level0name = N''' + Level0Name + 
     ''', @level1type = N''TABLE'', @level1name = N''' + Level1Name + 
     ''', @level2type = N''COLUMN'', @level2name = N''' + Level2Name + ''';' AS Script
-FROM ExtendedPropertiesBackup 
+FROM dictionary.TableInformation 
 WHERE ObjectType = 'COLUMN' 
-    AND BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup);
+    AND BackupDate = (SELECT MAX(BackupDate) FROM dictionary.TableInformation);
 
 -- 4. VERIFICATION SCRIPT
 -- Cek jumlah extended properties sebelum dan sesudah restore
 SELECT 
     'Total Extended Properties in Backup: ' + CAST(COUNT(*) AS VARCHAR(10)) AS Info
-FROM ExtendedPropertiesBackup 
-WHERE BackupDate = (SELECT MAX(BackupDate) FROM ExtendedPropertiesBackup)
+FROM dictionary.TableInformation 
+WHERE BackupDate = (SELECT MAX(BackupDate) FROM dictionary.TableInformation)
 
 UNION ALL
 
